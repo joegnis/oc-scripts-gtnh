@@ -1,8 +1,31 @@
 # OpenComputer Scripts for GTNH
 
+## Install
+
+    wget https://raw.githubusercontent.com/joegnis/oc-scripts-gtnh/install.lua
+    ./install.lua
+
+```
+Usage:
+./install [-b|--branch BRANCH] [-u|--update-file FILE]
+./install [-b|--branch BRANCH] [-c|--update-config]
+./install --help | -h
+
+Options:
+  -b --branch BRANCH     Downloads from a specific branch. Default is %s.
+  -u --update-file FILE  Updates a specific file.
+  -c --update-config     Updates all config files.
+  -h --help              Shows this message.
+
+By default, this script always (re)downloads all source files except for
+config files. For config files, it downloads all missing ones but does
+not download existing ones.
+```
+
 ## Automating Blood magic Alchemic Chemistry Set
 
 Automates item crafting in BM chemistry set.
+To run: `./bm_alchemist.lua`. Config file: `bm_alchemist_config.lua`.
 
 Script first reads AE patterns when launched, and after having detected materials in input chest, it tries matching patterns' input materials with them and then put them one by one into the chemistry set if matched.
 
@@ -29,6 +52,7 @@ Maintenance:
 ## Automating Blood Altar
 
 Automates item crafting and blood network refilling in BM Blood Altar.
+To run: `./blood_altar.lua`. Config file: `blood_altar_config.lua`.
 
 Script works in a similar way of the chemistry set script to automate item crafting. Additionally, when a blood orb is present in the orb chest, it puts the orb onto Altar when Altar is idle to keep player's blood network filled.
 
@@ -56,6 +80,7 @@ To connect the two parts together:
 ## Regulating Stack Size
 
 Moves items from input chests to output chests in stacks of size in certain multiples.
+To run: `./regulate_size.lua`. Config file: `regulate_size_config.lua`.
 
 Requirements:
 - 1 computer
