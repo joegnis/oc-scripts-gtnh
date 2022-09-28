@@ -2,7 +2,7 @@
 
 ## Install
 
-    wget https://raw.githubusercontent.com/joegnis/oc-scripts-gtnh/install.lua
+    wget https://raw.githubusercontent.com/joegnis/oc-scripts-gtnh/master/install.lua
     ./install.lua
 
 ```
