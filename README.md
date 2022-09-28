@@ -20,6 +20,8 @@ Options:
 By default, this script always (re)downloads all source files except for
 config files. For config files, it downloads all missing ones but does
 not download existing ones.
+
+When it updates a config file, it backs up existing one before proceeding.
 ```
 
 ## Automating Blood magic Alchemic Chemistry Set

@@ -30,6 +30,8 @@ Options:
 By default, this script always (re)downloads all source files except for
 config files. For config files, it downloads all missing ones but does
 not download existing ones.
+
+When it updates a config file, it backs up existing one before proceeding.
 ]], DEFAULT_BRANCH)
 
 ---@param filename string
@@ -73,23 +75,22 @@ local function main(args)
 
     local branch = DEFAULT_BRANCH
     if curArg == "--branch" or curArg == "-b" then
-        numArgs = numArgs + 1
-        branch = args[numArgs]
+        branch = args[numArgs + 1]
+        numArgs = numArgs + 2
         if string.find(branch, "^-") then
             io.stderr:write("invalid branch name: " .. branch)
             return false
         end
     end
 
-    numArgs = numArgs + 1
     local option = args[numArgs]
     if option == "-c" or option == "--update-config" then
         for _, config in ipairs(CONFIGS) do
             downloadConfig(config, REPO, branch)
         end
     elseif option == "-u" or option == "--update-file" then
-        numArgs = numArgs + 1
-        local fileArg = args[numArgs]
+        local fileArg = args[numArgs + 1]
+        numArgs = numArgs + 2
         for _, config in ipairs(CONFIGS) do
             if fileArg == config then
                 downloadConfig(fileArg, REPO, branch)
