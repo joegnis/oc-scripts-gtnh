@@ -7,8 +7,10 @@ local sides = require "sides"
 -- a component while holding an Analyzer from OC.
 local config = {
     -- Components
-    transposerInput = component.proxy("e53711f2-3432-4fe3-82ce-34816f69a536"),
-    transposerAltar = component.proxy("33760ec9-6211-4299-8114-f660c3c274bb"),
+    -- Change this
+    transposerInput = component.proxy("ID1"),
+    -- Change this
+    transposerAltar = component.proxy("ID2"),
     meInterface = component.me_interface,
     -- Transposer Input
     transposerInputInputSide = sides.north,
