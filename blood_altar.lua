@@ -20,7 +20,7 @@ local RECIPE_REQUIREMENTS = config.recipeRequirements
 
 local HELLO_MSG = [[
 Restart this program if patterns has changed. Press Ctrl-C to stop.
-You can put your blood orb in the altar. It will be saved in the red chest during crafting and put back after that.
+You can put your blood orb in the altar. It will be saved in the orb chest during crafting and put back after that.
 ]]
 
 local DEBUG = false

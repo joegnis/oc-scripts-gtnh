@@ -56,12 +56,14 @@ Maintenance:
 Automates item crafting and blood network refilling in BM Blood Altar.
 To run: `./blood_altar.lua`. Config file: `blood_altar_config.lua`.
 
-Script works in a similar way of the chemistry set script to automate item crafting. Additionally, when a blood orb is present in the orb chest, it puts the orb onto Altar when Altar is idle to keep player's blood network filled.
+Script works in a similar way of the chemistry set script to automate item crafting. Additionally,
+- when a blood orb is present in the orb chest, it puts the orb onto Altar when Altar is idle to keep player's blood network filled.
+- waits for Altar to fill up when blood is not enough (blood requirements are hardcoded in config file.)
 
 Requirements:
 - 1 computer
 - 2 Transposers
-- 1 Adapter
+- 2 Adapter
 - 1 Blood Orb (optional)
 - Some chests
 - Some item conduits (or other item transfer methods)
