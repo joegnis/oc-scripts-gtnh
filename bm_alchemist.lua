@@ -35,26 +35,32 @@ end
 --[[
     Scans input box, and returns the name of output and a table of input items information
 
-    e.g. It returns Potentia,
+    e.g. It returns "Potentia",
     {
-        names = {"Energium Dust", "Vibrant Alloy Dust", "Strengthened Catalyst"},
+        labels = {"Energium Dust", "Vibrant Alloy Dust", "Strengthened Catalyst"},
         slots = {1, 2, 3},
-        amounts = {2, 2, 1},
+        sizes = {2, 2, 1},
     }
     Returns nil, nil if no matched patterns were found.
     Assumes that no items are spilt across different stacks to make implementation simpler
 ]]
+---@param transposerInput any
+---@param sideInput integer
+---@param patternsInfo table<string, PatternInfo>
+---@param outputLookup table<string, string[]>
+---@return string?
+---@return {labels: string[], slots: integer[], sizes: integer[]}?
 local function scanInputBox(transposerInput, sideInput, patternsInfo, outputLookup)
     local stacksInfo = utils.collectStacksInfo(transposerInput, sideInput)
     local possibleRecipes = {}
     local allInputsInfo = {}
     for input, entry in pairs(stacksInfo) do
         local inputSlot = entry.slots[1]
-        local inputAmount = entry.amounts[1]
+        local inputAmount = entry.sizes[1]
 
         local matchedOutputs = outputLookup[input]
         if matchedOutputs == nil then
-            print("Skipped unkown item " .. input)
+            print("Skipped unknown item " .. input)
             goto continue
         end
         -- One input may be needed in multiple recipes
@@ -66,14 +72,14 @@ local function scanInputBox(transposerInput, sideInput, patternsInfo, outputLook
                 patternInputsCounts[input] = nil
 
                 local inputsInfo = allInputsInfo[output] or {
-                    names = {},
+                    labels = {},
                     slots = {},
-                    amounts = {}
+                    sizes = {}
                 }
                 allInputsInfo[output] = inputsInfo
-                inputsInfo.names[#inputsInfo.names + 1] = input
+                inputsInfo.labels[#inputsInfo.labels + 1] = input
                 inputsInfo.slots[#inputsInfo.slots + 1] = inputSlot
-                inputsInfo.amounts[#inputsInfo.amounts + 1] = inputAmount
+                inputsInfo.sizes[#inputsInfo.sizes + 1] = inputAmount
 
                 if next(patternInputsCounts) == nil then
                     print("Found items to make " .. output)
@@ -114,12 +120,16 @@ end
 
     Assumes chem set is empty, and the number of ingredients in inputs_info is correct
 ]]
+---@param transposerInput any
+---@param sideInput integer
+---@param sideChemset integer
+---@param inputsInfo {labels: string[], slots: integer[], sizes: integer[]}
 local function getInput(transposerInput, sideInput, sideChemset, inputsInfo)
     local chemSlot = 2
     local iInput = 1
     while chemSlot <= 6 do
         local inputSlot = inputsInfo.slots[iInput]
-        local inputAmount = inputsInfo.amounts[iInput]
+        local inputAmount = inputsInfo.sizes[iInput]
         for _ = 1, inputAmount do
             transposerInput.transferItem(sideInput, sideChemset, 1, inputSlot, chemSlot)
             chemSlot = chemSlot + 1
@@ -207,7 +217,9 @@ end
 local function testGetInput()
     local patterns, outputLookup = utils.getPatternsInfo(ME_INTERFACE)
     local _, inputInfo = scanInputBox(TRANSPOSER, TRANSPOSER_SIDE_INPUT, patterns, outputLookup)
-    getInput(TRANSPOSER, TRANSPOSER_SIDE_INPUT, TRANSPOSER_SIDE_CHEMSET, inputInfo)
+    if inputInfo then
+        getInput(TRANSPOSER, TRANSPOSER_SIDE_INPUT, TRANSPOSER_SIDE_CHEMSET, inputInfo)
+    end
 end
 
 main({ ... })

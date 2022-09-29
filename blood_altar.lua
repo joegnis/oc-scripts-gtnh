@@ -66,15 +66,15 @@ local function getOutput(transposerAltar, sideAltar, sideOutput)
     transposerAltar.transferItem(sideAltar, sideOutput, 1, 1, utils.firstAvailableSlot(transposerAltar, sideOutput))
 end
 
----Finds the first blood orb in an inventory, returns its slot number and name if found
+---Finds the first blood orb in an inventory, returns its slot number and stack info if found
 ---@param transposer any
 ---@param sideInventory integer
 ---@return integer? slot
----@return string? orbName
+---@return StackInfo? orb
 local function getOrbFromInventory(transposer, sideInventory)
-    local itemInfo = utils.firstItem(transposer, sideInventory)
-    if itemInfo and string.find(string.lower(itemInfo.name), "blood orb") ~= nil then
-        return itemInfo.slot, itemInfo.name
+    local stackInfo = utils.firstStack(transposer, sideInventory)
+    if stackInfo and string.find(stackInfo.name, "^AWWayofTime:.*BloodOrb$") ~= nil then
+        return stackInfo.slot, stackInfo
     end
 end
 
@@ -87,10 +87,10 @@ end
 ---@param sideAltar integer
 ---@param sideOrb integer
 local function saveOrbFromAltar(transposerAltar, sideAltar, sideOrb)
-    local orbSlot, orbName = getOrbFromInventory(transposerAltar, sideAltar)
-    if orbSlot and orbName then
+    local orbSlot, orb = getOrbFromInventory(transposerAltar, sideAltar)
+    if orbSlot and orb then
         transposerAltar.transferItem(sideAltar, sideOrb, 1, orbSlot)
-        print(string.format("Saved %s", orbName))
+        print(string.format("Saved %s", orb.label))
     end
 end
 
@@ -105,11 +105,11 @@ end
 ---@param transposerAltar any
 ---@param sideAltar integer
 local function putOrbOnAltar(transposerInput, sideOrb, sideOutput, transposerAltar, sideAltar)
-    local orbSlot, orbName = getOrbFromInventory(transposerInput, sideOrb)
-    if orbSlot and orbName and not next(transposerAltar.getAllStacks(sideAltar)()) then
+    local orbSlot, orb = getOrbFromInventory(transposerInput, sideOrb)
+    if orbSlot and orb and not next(transposerAltar.getAllStacks(sideAltar)()) then
         local transferred = transposerInput.transferItem(sideOrb, sideOutput, 1, orbSlot)
         if transferred > 0 then
-            print(string.format("Put %s on Altar", orbName))
+            print(string.format("Put %s on Altar", orb.label))
         end
     end
 end

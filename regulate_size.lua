@@ -11,6 +11,11 @@ local REGULATORS = config.regulators
 
     After combining stacks, we no longer worry about leaving items in scattered stacks
 ]]
+---@param transposer any
+---@param stacksInfo table<string, ItemStacksInfo>
+---@param size integer
+---@param inSide integer
+---@param outSide integer
 local function move(transposer, stacksInfo, size, inSide, outSide)
     for itemName, entry in pairs(stacksInfo) do
         if utils.firstAvailableSlot(transposer, outSide) == 0 then
@@ -20,37 +25,37 @@ local function move(transposer, stacksInfo, size, inSide, outSide)
 
         local slots = entry.slots
         local numSlots = #slots
-        local amounts = entry.amounts
+        local sizes = entry.sizes
         local i = 1
         while i <= numSlots do
             local slot = slots[i]
-            local amount = amounts[i]
-            if amount >= size then
-                local sizeToMove = (amount // size) * size
+            local stackSize = sizes[i]
+            if stackSize >= size then
+                local sizeToMove = (stackSize // size) * size
                 local outSlot = utils.firstAvailableSlot(transposer, outSide)
                 if outSlot == 0 then goto continue end
                 transposer.transferItem(inSide, outSide, sizeToMove, slot, outSlot)
                 print(string.format("Moved %d %s", sizeToMove, itemName))
-                amount = amount - sizeToMove
+                stackSize = stackSize - sizeToMove
             end
 
             -- May have an incomplete stack
             if i + 1 <= numSlots then
                 local nextSlot = slots[i + 1]
-                if amount + amounts[i + 1] >= size then
+                if stackSize + sizes[i + 1] >= size then
                     local outSlot = utils.firstAvailableSlot(transposer, outSide)
                     if outSlot == 0 then goto continue end
-                    transposer.transferItem(inSide, outSide, amount, slot, outSlot)
-                    transposer.transferItem(inSide, outSide, size - amount, nextSlot, outSlot)
-                    print(string.format("Moved %d %s", amount, itemName))
-                    amounts[i] = 0
-                    amounts[i + 1] = amounts[i + 1] - (size - amount)
+                    transposer.transferItem(inSide, outSide, stackSize, slot, outSlot)
+                    transposer.transferItem(inSide, outSide, size - stackSize, nextSlot, outSlot)
+                    print(string.format("Moved %d %s", stackSize, itemName))
+                    sizes[i] = 0
+                    sizes[i + 1] = sizes[i + 1] - (size - stackSize)
                 else
                     -- Merges leftover
-                    transposer.transferItem(inSide, inSide, amount, slot, nextSlot)
-                    print(string.format("Combined %d %s with other %d", amount, itemName, amounts[i + 1]))
-                    amounts[i] = 0
-                    amounts[i + 1] = amounts[i + 1] + amount
+                    transposer.transferItem(inSide, inSide, stackSize, slot, nextSlot)
+                    print(string.format("Combined %d %s with other %d", stackSize, itemName, sizes[i + 1]))
+                    sizes[i] = 0
+                    sizes[i + 1] = sizes[i + 1] + stackSize
                 end
             end
 

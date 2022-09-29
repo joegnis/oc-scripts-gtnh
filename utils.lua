@@ -41,12 +41,12 @@ function M.shallowCopy(orig)
 end
 
 --[[
-    Returns the first available slot in the container
+    Returns the first available slot in the inventory
 
     Returns 0 if it is full
 ]]
-function M.firstAvailableSlot(transposer, sideContainer)
-    local stackIterator = transposer.getAllStacks(sideContainer)
+function M.firstAvailableSlot(transposer, sideInventory)
+    local stackIterator = transposer.getAllStacks(sideInventory)
     local curStack = stackIterator()
     local curSlot = 1
     while curStack ~= nil do
@@ -59,25 +59,36 @@ function M.firstAvailableSlot(transposer, sideContainer)
     return 0
 end
 
+---@alias StackInfo { label: string, name: string, slot: integer, size: integer, maxSize: integer }
 --[[
-    Returns the first item in the container
+    Returns the first stack in the inventory
 
     e.g. It returns {
-        name = "Cobblestone",
+        name = "minecraft:cobblestone",
+        label = "Cobblestone",
         slot = 5,
-        amount = 24,
-        maxAmount = 64
+        size = 24,
+        maxSize = 64
     }
 
-    Returns nil if the container is empty
+    Returns nil if the inventory is empty
 ]]
-function M.firstItem(transposer, sideContainer)
-    local stackIterator = transposer.getAllStacks(sideContainer)
+---@param transposer any
+---@param sideInventory integer
+---@return StackInfo
+function M.firstStack(transposer, sideInventory)
+    local stackIterator = transposer.getAllStacks(sideInventory)
     local curStack = stackIterator()
     local curSlot = 1
     while curStack ~= nil do
         if next(curStack) ~= nil then
-            return { name = curStack.label, slot = curSlot, amount = curStack.size, maxAmount = curStack.maxSize }
+            return {
+                name = curStack.name,
+                label = curStack.label,
+                slot = curSlot,
+                size = curStack.size,
+                maxSize = curStack.maxSize,
+            }
         end
 
         curStack = stackIterator()
@@ -87,19 +98,25 @@ function M.firstItem(transposer, sideContainer)
     return nil
 end
 
+---@alias ItemStacksInfo { name: string, label: string, slots: integer[], sizes: integer[], maxSize: integer}
 --[[
-    Collects info about stacks in a container
+    Collects info about stacks in an inventory
 
     e.g. It returns {
         Cobblestone = {
+            name = "minecraft:cobblestone"
+            label = "Cobblestone",
             slots = { 1, 5 },
-            amounts = { 28, 64 },
-            maxAmount = 64,
+            sizes = { 28, 64 },
+            maxSize = 64,
         }
     }
 
-    Returns an empty table if the container is empty
+    Returns an empty table if the inventory is empty
 ]]
+---@param transposer any
+---@param side integer
+---@return table<string, ItemStacksInfo>
 function M.collectStacksInfo(transposer, side)
     local stackIterator = transposer.getAllStacks(side)
     local stacksInfo = {}
@@ -110,18 +127,20 @@ function M.collectStacksInfo(transposer, side)
             break
         end
         if next(curStack) ~= nil then
-            local itemName = curStack.label
-            local itemAmount = curStack.size
+            ---@type string
+            local itemLabel = curStack.label
+            ---@type string
+            local itemName = curStack.name
+            ---@type integer
+            local stackSize = curStack.size
 
-            local entry = stacksInfo[itemName]
+            local entry = stacksInfo[itemLabel]
             if entry == nil then
-                entry = { slots = {}, amounts = {}, maxAmount = curStack.maxSize }
-                stacksInfo[itemName] = entry
+                entry = { name = itemName, label = itemLabel, slots = {}, sizes = {}, maxSize = curStack.maxSize }
+                stacksInfo[itemLabel] = entry
             end
-            local slots = entry.slots
-            slots[#slots + 1] = slot
-            local amounts = entry.amounts
-            amounts[#amounts + 1] = itemAmount
+            table.insert(entry.slots, slot)
+            table.insert(entry.sizes, stackSize)
         end
 
         slot = slot + 1
@@ -135,17 +154,20 @@ end
 
     e.g. 32,28,4,64 -> 64,64
 ]]
+---@param transposer any
+---@param stacksInfo table<string, ItemStacksInfo>
+---@param inSide integer
 function M.combineStacks(transposer, stacksInfo, inSide)
     for itemName, entry in pairs(stacksInfo) do
         local slots = entry.slots
         local numStacks = #slots
-        local amounts = entry.amounts
-        local maxAmount = entry.maxAmount
+        local sizes = entry.sizes
+        local maxSize = entry.maxSize
 
         local iIncomplete = 1
         while true do
             -- Skips full and empty stacks
-            while iIncomplete < numStacks and (amounts[iIncomplete] == maxAmount or amounts[iIncomplete] == 0) do
+            while iIncomplete < numStacks and (sizes[iIncomplete] == maxSize or sizes[iIncomplete] == 0) do
                 iIncomplete = iIncomplete + 1
             end
             if iIncomplete >= numStacks then
@@ -154,15 +176,15 @@ function M.combineStacks(transposer, stacksInfo, inSide)
 
             -- Fills up one stack at a time
             local i = iIncomplete + 1
-            while i <= numStacks and amounts[iIncomplete] < maxAmount do
+            while i <= numStacks and sizes[iIncomplete] < maxSize do
                 -- Does not break full stacks
-                if amounts[i] ~= maxAmount then
-                    local incompleteAmt = amounts[iIncomplete]
-                    local moveSize = math.min(amounts[i], maxAmount - incompleteAmt)
+                if sizes[i] ~= maxSize then
+                    local incompleteAmt = sizes[iIncomplete]
+                    local moveSize = math.min(sizes[i], maxSize - incompleteAmt)
                     if moveSize > 0 then
                         transposer.transferItem(inSide, inSide, moveSize, slots[i], slots[iIncomplete])
-                        amounts[iIncomplete] = incompleteAmt + moveSize
-                        amounts[i] = amounts[i] - moveSize
+                        sizes[iIncomplete] = incompleteAmt + moveSize
+                        sizes[i] = sizes[i] - moveSize
                         print(string.format("Combined %d %s with other %d", moveSize, itemName, incompleteAmt))
                     end
                 end
