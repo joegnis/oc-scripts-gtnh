@@ -188,9 +188,11 @@ end
             ["Blank Slate"] = { "Reinforced Slate" }
         }
 ]]
+---@alias PatternInfo {inputs: string[], outputAmount: integer}
+---@alias PatternsLookup table<string, string[]>
 ---@param meInterface any
----@return table<string, {inputs: string[], outputAmount: integer}>
----@return table<string, string[]>
+---@return table<string, PatternInfo>
+---@return PatternsLookup
 function M.getPatternsInfo(meInterface)
     local patternsInfo = {}
     for i = 1, 36 do -- 36 is the max number of patterns
