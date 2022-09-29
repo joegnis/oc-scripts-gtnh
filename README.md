@@ -12,7 +12,7 @@ Usage:
 ./install --help | -h
 
 Options:
-  -b --branch BRANCH     Downloads from a specific branch. Default is %s.
+  -b --branch BRANCH     Downloads from a specific branch. Default is master.
   -u --update-file FILE  Updates a specific file.
   -c --update-config     Updates all config files.
   -h --help              Shows this message.
