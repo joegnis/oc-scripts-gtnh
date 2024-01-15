@@ -61,20 +61,28 @@ Script works in a similar way of the chemistry set script to automate item craft
 - waits for Altar to fill up when blood is not enough (blood requirements are hardcoded in config file.)
 
 Requirements:
-- 1 computer
+- 1 OC computer with support to 8 (Tier 1 CPU) or 9 (Tier 2 CPU) components:
+  2 memory, 1 hard disk, 1 graphics card, 1 internet card (optional but convenient),
+  2 transposers, and 2 adapters
 - 2 Transposers
-- 2 Adapter
+- 2 Adapters
 - 1 Blood Orb (optional)
 - Some chests
 - Some item conduits (or other item transfer methods)
 - Some OC cables/network conduits
 
-See the illustration below for an example setup. This setup is split into two parts: one for computer case and processing inputs; another for interfacing with Altar. We don't have to do this, but Altar usually needs room for rituals and I find it easier to set up without a space limitation.
-To connect the two parts together:
-- route items from Input-side output chest to the bottom of Altar;
-- route items from Altar-side orb chest to Input-side orb chest
-- route items from Altar-side output chest to Input-side ME Interface
-- connect Altar-side transposer to Input-side computer
+See the illustration below for an example setup.
+This setup has roughly two groups of components:
+one has OC computer and ME interface;
+another has Altar.
+I separate the two groups physically since
+it saves space for Well of Suffering ritual.
+
+Connection:
+- auto-pull items from ME-side output chest to the bottom of Altar;
+- auto-pull items from Altar-side orb chest to ME-side orb chest
+- auto-pull items from Altar-side output chest to ME-side ME Interface
+- connect Altar-side transposer to ME-side computer
 
 ![altar setup (input)](./readme_assets/bm_altar_setup_input.png)
 
