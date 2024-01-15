@@ -12,16 +12,24 @@ Usage:
 ./install --help | -h
 
 Options:
-  -b --branch BRANCH     Downloads from a specific branch. Default is master.
-  -u --update-file FILE  Updates a specific file.
-  -c --update-config     Updates all config files.
-  -h --help              Shows this message.
+  -b --branch BRANCH
+    Downloads from a specific branch.
+    Default is %s.
+  -u --update-file FILE
+    Updates a specific file.
+  -c --update-config
+    Updates all config files.
+  -h --help
+    Shows this message.
 
-By default, this script always (re)downloads all source files except for
-config files. For config files, it downloads all missing ones but does
-not download existing ones.
+By default, this script always (re)downloads
+all source files except for config files.
 
-When it updates a config file, it backs up existing one before proceeding.
+For config files, by default it downloads all
+missing ones but does not download existing ones.
+To force download a config file, use -u option.
+Before it updates a config file,
+it backs up existing one before proceeding.
 ```
 
 ## Automating Blood magic Alchemic Chemistry Set
@@ -83,6 +91,11 @@ Connection:
 - auto-pull items from Altar-side orb chest to ME-side orb chest
 - auto-pull items from Altar-side output chest to ME-side ME Interface
 - connect Altar-side transposer to ME-side computer
+
+Other notes
+- ME interface doesn't need be set to blocking mode
+  since all altar recipes are one input to one output, i.e.,
+  it is impossible to have two recipes having the same input.
 
 ![altar setup (input)](./readme_assets/bm_altar_setup_input.png)
 

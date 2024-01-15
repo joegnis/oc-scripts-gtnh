@@ -1,14 +1,10 @@
 local component = require "component"
 local sides = require "sides"
 
--- To specify an OC component by its ID:
--- component.proxy("ID")
--- You can copy ID to system clipboard by Ctrl-Shift-Right-click
--- a component while holding an Analyzer from OC.
 local config = {
     -- We have two transposers so we need to differentiate them by IDs
-    -- Hold an OC Analyzer, Shift+Right click on a transposer,
-    -- click on the message to copy its ID to system clipboard
+    -- Hold an OC Analyzer, Ctrl+Shift+Right click on a component to
+    -- copy its ID directly to system clipboard.
     -- One group of components is called ME, another is Altar.
     -- Change this
     transposerME = component.proxy("2e16230e-d3a7-4e3b-a421-ee22ee211042"),
