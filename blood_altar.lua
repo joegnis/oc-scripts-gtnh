@@ -4,14 +4,14 @@ local sides = require "sides"
 local config = require "blood_altar_config"
 local utils = require "utils"
 
-local TRANSPOSER_INPUT = config.transposerInput
+local TRANSPOSER_ME = config.transposerME
 local TRANSPOSER_ALTAR = config.transposerAltar
 local ME_INTERFACE = config.meInterface
 local BLOOD_ALTAR = config.bloodAltar
 
-local TRANSPOSER_INPUT_SIDE_INPUT = config.transposerInputInputSide
-local TRANSPOSER_INPUT_SIDE_OUTPUT = config.transposerInputOutputSide
-local TRANSPOSER_INPUT_SIDE_ORB = config.transposerInputOrbSide
+local TRANSPOSER_ME_SIDE_INPUT = config.transposerMEInputSide
+local TRANSPOSER_ME_SIDE_OUTPUT = config.transposerMEOutputSide
+local TRANSPOSER_ME_SIDE_ORB = config.transposerMEOrbSide
 local TRANSPOSER_ALTAR_SIDE_ALTAR = config.transposerAltarAltarSide
 local TRANSPOSER_ALTAR_SIDE_OUTPUT = config.transposerAltarOutputSide
 local TRANSPOSER_ALTAR_SIDE_ORB = config.transposerAltarOrbSide
@@ -164,7 +164,7 @@ local function main()
     local requirement
     while true do
         if state == STATE.IDLE then
-            outputName, inputSlot = scanInputBox(TRANSPOSER_INPUT, TRANSPOSER_INPUT_SIDE_INPUT, inputToPatterns)
+            outputName, inputSlot = scanInputBox(TRANSPOSER_ME, TRANSPOSER_ME_SIDE_INPUT, inputToPatterns)
             if outputName then
                 local lowerName = string.lower(outputName)
                 if lowerName == "universal fluid cell" then
@@ -187,13 +187,13 @@ local function main()
                 state = STATE.INPUT
             else
                 putOrbOnAltar(
-                    TRANSPOSER_INPUT, TRANSPOSER_INPUT_SIDE_ORB, TRANSPOSER_INPUT_SIDE_OUTPUT,
+                    TRANSPOSER_ME, TRANSPOSER_ME_SIDE_ORB, TRANSPOSER_ME_SIDE_OUTPUT,
                     TRANSPOSER_ALTAR, TRANSPOSER_ALTAR_SIDE_ALTAR
                 )
             end
         elseif state == STATE.INPUT then
             saveOrbFromAltar(TRANSPOSER_ALTAR, TRANSPOSER_ALTAR_SIDE_ALTAR, TRANSPOSER_ALTAR_SIDE_ORB)
-            getInput(TRANSPOSER_INPUT, TRANSPOSER_INPUT_SIDE_INPUT, TRANSPOSER_INPUT_SIDE_OUTPUT, inputSlot)
+            getInput(TRANSPOSER_ME, TRANSPOSER_ME_SIDE_INPUT, TRANSPOSER_ME_SIDE_OUTPUT, inputSlot)
             print("Waiting for output " .. outputName)
             state = STATE.WAIT
         elseif state == STATE.WAIT then
@@ -217,11 +217,11 @@ end
 
 local function testScanInputBox()
     local _, inputToPatterns = utils.getPatternsInfo(ME_INTERFACE)
-    print(scanInputBox(TRANSPOSER_INPUT, sides.south, inputToPatterns))
+    print(scanInputBox(TRANSPOSER_ME, sides.south, inputToPatterns))
 end
 
 local function testGetInput()
-    getInput(TRANSPOSER_INPUT, TRANSPOSER_INPUT_SIDE_INPUT, TRANSPOSER_INPUT_SIDE_OUTPUT, 1)
+    getInput(TRANSPOSER_ME, TRANSPOSER_ME_SIDE_INPUT, TRANSPOSER_ME_SIDE_OUTPUT, 1)
 end
 
 local function testIsAltarComplete()
@@ -238,13 +238,13 @@ end
 
 local function testPutOrb()
     putOrbOnAltar(
-        TRANSPOSER_INPUT, TRANSPOSER_INPUT_SIDE_ORB, TRANSPOSER_INPUT_SIDE_OUTPUT,
+        TRANSPOSER_ME, TRANSPOSER_ME_SIDE_ORB, TRANSPOSER_ME_SIDE_OUTPUT,
         TRANSPOSER_ALTAR, TRANSPOSER_ALTAR_SIDE_ALTAR
     )
 end
 
 local function testSavePutOrb()
-    putOrbOnAltar(TRANSPOSER_INPUT, TRANSPOSER_INPUT_SIDE_ORB, TRANSPOSER_INPUT_SIDE_OUTPUT, TRANSPOSER_ALTAR,
+    putOrbOnAltar(TRANSPOSER_ME, TRANSPOSER_ME_SIDE_ORB, TRANSPOSER_ME_SIDE_OUTPUT, TRANSPOSER_ALTAR,
         TRANSPOSER_ALTAR_SIDE_ALTAR)
 end
 

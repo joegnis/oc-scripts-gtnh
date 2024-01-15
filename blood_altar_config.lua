@@ -6,19 +6,20 @@ local sides = require "sides"
 -- You can copy ID to system clipboard by Ctrl-Shift-Right-click
 -- a component while holding an Analyzer from OC.
 local config = {
-    -- Components
+    -- We have two transposers so we need to differentiate them by IDs
+    -- Hold an OC Analyzer, Shift+Right click on a transposer,
+    -- click on the message to copy its ID to system clipboard
+    -- One group of components is called ME, another is Altar.
     -- Change this
-    transposerInput = component.proxy("ID1"),
+    transposerME = component.proxy("ID1"),
     -- Change this
     transposerAltar = component.proxy("ID2"),
     meInterface = component.me_interface,
     bloodAltar = component.blood_altar,
-    -- Transposer Input
-    transposerInputInputSide = sides.north,
-    ---Side of output chest connected to altar
-    transposerInputOutputSide = sides.west,
-    transposerInputOrbSide = sides.top,
-    -- Transposer Altar
+    -- Change the following sides according to our setup
+    transposerMEInputSide = sides.north,
+    transposerMEOutputSide = sides.west,
+    transposerMEOrbSide = sides.top,
     transposerAltarAltarSide = sides.west,
     transposerAltarOutputSide = sides.north,
     transposerAltarOrbSide = sides.top,
