@@ -22,16 +22,24 @@ Usage:
 ./install --help | -h
 
 Options:
-  -b --branch BRANCH     Downloads from a specific branch. Default is %s.
-  -u --update-file FILE  Updates a specific file.
-  -c --update-config     Updates all config files.
-  -h --help              Shows this message.
+  -b --branch BRANCH
+    Downloads from a specific branch.
+    Default is %s.
+  -u --update-file FILE
+    Updates a specific file.
+  -c --update-config
+    Updates all config files.
+  -h --help
+    Shows this message.
 
-By default, this script always (re)downloads all source files except for
-config files. For config files, it downloads all missing ones but does
-not download existing ones.
+By default, this script always (re)downloads
+all source files except for config files.
 
-When it updates a config file, it backs up existing one before proceeding.
+For config files, by default it downloads all
+missing ones but does not download existing ones.
+To force download a config file, use -u option.
+Before it updates a config file,
+it backs up existing one before proceeding.
 ]], DEFAULT_BRANCH)
 
 ---@param filename string
