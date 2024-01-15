@@ -24,6 +24,9 @@ local config = {
     transposerAltarOutputSide = sides.north,
     transposerAltarOrbSide = sides.top,
     -- Hard-coded blood and tier requirement for each recipe
+    -- Simply right click Altar of Blood in NEI to see all its recipe
+    -- in game.
+    -- Check these values after upgrading GTNH.
     ---@alias BMRecipeRequirement {blood: integer, tier: integer}
     ---@type table<string, BMRecipeRequirement>
     recipeRequirements = {
@@ -34,6 +37,7 @@ local config = {
         ["blood orange"] = { blood = 200, tier = 1 },
         ["blood cookie"] = { blood = 2000, tier = 1 },
         ["blood money x1"] = { blood = 10000, tier = 3 },
+        ["blood frame"] = { blood = 5000, tier = 1 },
         ["bloodthorn"] = { blood = 15000, tier = 4 },
         ["blood infused wood"] = { blood = 5000, tier = 2 },
         ["blood stained glass"] = { blood = 200, tier = 1 },
@@ -57,8 +61,7 @@ local config = {
         ["imbued slate"] = { blood = 7500, tier = 3 },
         ["demonic slate"] = { blood = 20000, tier = 4 },
         ["ethereal slate"] = { blood = 60000, tier = 5 },
-        -- TODO: Needs to read content of cell
-        ["universal fluid cell"] = { blood = 1000, tier = 1 },
+        ["life cell"] = { blood = 1000, tier = 1 },
         ["potion flask"] = { blood = 4000, tier = 2 },
         ["unbound crystal"] = { blood = 5000, tier = 2 },
         ["dagger of sacrifice"] = { blood = 10000, tier = 2 },
@@ -69,13 +72,14 @@ local config = {
         ["elemental inscription tool: earth"] = { blood = 5000, tier = 3 },
         ["elemental inscription tool: air"] = { blood = 5000, tier = 3 },
         ["elemental inscription tool: dusk"] = { blood = 10000, tier = 4 },
-        ["elemental inscription tool: dawn"] = { blood = 10000, tier = 6 },
+        ["elemental inscription tool: dawn"] = { blood = 100000, tier = 6 },
         ["ender shard"] = { blood = 5000, tier = 4 },
         ["enhanced teleposition focus"] = { blood = 20000, tier = 4 },
         ["blood-soaked thaumium block"] = { blood = 5000, tier = 2 },
         ["blood-soaked void block"] = { blood = 10000, tier = 3 },
         ["blood-soaked ichorium block"] = { blood = 50000, tier = 5 },
         ["bound diamond"] = { blood = 10000, tier = 5 },
+        ["blood stained block"] = { blood = 3500, tier = 2 },
         ["blood rod"] = { blood = 50000, tier = 4 },
     },
 }
