@@ -11,17 +11,17 @@ local config = {
     -- click on the message to copy its ID to system clipboard
     -- One group of components is called ME, another is Altar.
     -- Change this
-    transposerME = component.proxy("ID1"),
+    transposerME = component.proxy("2e16230e-d3a7-4e3b-a421-ee22ee211042"),
     -- Change this
-    transposerAltar = component.proxy("ID2"),
+    transposerAltar = component.proxy("fc06735f-566a-437d-ad92-3fb0db1272fd"),
     meInterface = component.me_interface,
     bloodAltar = component.blood_altar,
     -- Change the following sides according to our setup
-    transposerMEInputSide = sides.north,
-    transposerMEOutputSide = sides.west,
+    transposerMEInputSide = sides.east,
+    transposerMEOutputSide = sides.north,
     transposerMEOrbSide = sides.top,
-    transposerAltarAltarSide = sides.west,
-    transposerAltarOutputSide = sides.north,
+    transposerAltarAltarSide = sides.south,
+    transposerAltarOutputSide = sides.west,
     transposerAltarOrbSide = sides.top,
     -- Hard-coded blood and tier requirement for each recipe
     -- Simply right click Altar of Blood in NEI to see all its recipe
