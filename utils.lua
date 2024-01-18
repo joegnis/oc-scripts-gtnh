@@ -75,7 +75,7 @@ end
 ]]
 ---@param transposer any
 ---@param sideInventory integer
----@return StackInfo
+---@return StackInfo?
 function M.firstStack(transposer, sideInventory)
     local stackIterator = transposer.getAllStacks(sideInventory)
     local curStack = stackIterator()
@@ -94,11 +94,10 @@ function M.firstStack(transposer, sideInventory)
         curStack = stackIterator()
         curSlot = curSlot + 1
     end
-
-    return nil
 end
 
 ---@alias ItemStacksInfo { name: string, label: string, slots: integer[], sizes: integer[], maxSize: integer}
+
 --[[
     Collects info about stacks in an inventory
 
@@ -150,14 +149,16 @@ function M.collectStacksInfo(transposer, side)
 end
 
 --[[
-    Combines incomplete stacks
+    Combines incomplete stacks but does not sort them
 
     e.g. 32,28,4,64 -> 64,64
 ]]
 ---@param transposer any
----@param stacksInfo table<string, ItemStacksInfo>
----@param inSide integer
-function M.combineStacks(transposer, stacksInfo, inSide)
+---@param side integer
+---@param verbose boolean?
+---@return table<string, ItemStacksInfo> # stacks info after combination
+function M.combineStacks(transposer, side, verbose)
+    local stacksInfo = M.collectStacksInfo(transposer, side)
     for itemName, entry in pairs(stacksInfo) do
         local slots = entry.slots
         local numStacks = #slots
@@ -175,24 +176,31 @@ function M.combineStacks(transposer, stacksInfo, inSide)
             end
 
             -- Fills up one stack at a time
-            local i = iIncomplete + 1
-            while i <= numStacks and sizes[iIncomplete] < maxSize do
+            -- Finds a stack after the incomplete stack to combine with
+            local iSrc = iIncomplete + 1
+            while iSrc <= numStacks and sizes[iIncomplete] < maxSize do
                 -- Does not break full stacks
-                if sizes[i] ~= maxSize then
+                if sizes[iSrc] ~= maxSize then
                     local incompleteAmt = sizes[iIncomplete]
-                    local moveSize = math.min(sizes[i], maxSize - incompleteAmt)
+                    local moveSize = math.min(sizes[iSrc], maxSize - incompleteAmt)
                     if moveSize > 0 then
-                        transposer.transferItem(inSide, inSide, moveSize, slots[i], slots[iIncomplete])
+                        transposer.transferItem(side, side, moveSize, slots[iSrc], slots[iIncomplete])
                         sizes[iIncomplete] = incompleteAmt + moveSize
-                        sizes[i] = sizes[i] - moveSize
-                        print(string.format("Combined %d %s with other %d", moveSize, itemName, incompleteAmt))
+                        sizes[iSrc] = sizes[iSrc] - moveSize
+                        if verbose then
+                            print(string.format("Combined %d %s with other %d",
+                                moveSize, itemName, incompleteAmt))
+                        end
                     end
                 end
-                i = i + 1
+                iSrc = iSrc + 1
             end
-            iIncomplete = i - 1 -- i was advanced once when the stack is filled up
+            iIncomplete = iSrc - 1 -- i was advanced one more time when the stack is filled up
         end
     end
+
+    -- Rescans to remove stacks with size 0
+    return M.collectStacksInfo(transposer, side)
 end
 
 --[[
@@ -211,7 +219,7 @@ end
         }
 ]]
 ---@alias PatternInfo {inputs: string[], outputAmount: integer}
----@alias PatternsLookup table<string, string[]>
+---@alias PatternsLookup table<string, string[]> reverse lookup table of patterns
 ---@param meInterface any
 ---@return table<string, PatternInfo>
 ---@return PatternsLookup
@@ -275,6 +283,16 @@ local function testGetPatternsInfo()
     print(M.tableToString(patterns))
     print("Input to Patterns:")
     print(M.tableToString(inputToPatterns))
+end
+
+local function testCombineStacks()
+    local component = require "component"
+    local sides = require "sides"
+    local transposer = component.transposer
+    local side = sides.top
+    print(M.tableToString(
+        M.combineStacks(transposer, side, true)
+    ))
 end
 
 return M

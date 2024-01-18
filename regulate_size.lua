@@ -75,9 +75,9 @@ local function regulateSize(transposer, inSide, outSide, size)
         return
     end
 
-    utils.combineStacks(transposer, utils.collectStacksInfo(transposer, inSide), inSide)
+    utils.combineStacks(transposer, inSide)
     move(transposer, utils.collectStacksInfo(transposer, inSide), size, inSide, outSide)
-    utils.combineStacks(transposer, utils.collectStacksInfo(transposer, outSide), outSide)
+    utils.combineStacks(transposer, outSide)
 end
 
 local function main()

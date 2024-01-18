@@ -19,23 +19,20 @@ local TRANSPOSER_ALTAR_SIDE_ORB = config.transposerAltarOrbSide
 local RECIPE_REQUIREMENTS = config.recipeRequirements
 
 local HELLO_MSG = [[
-Restart this program if patterns has changed.
-Press Ctrl-C to stop.
-You can put your blood orb in the altar.
-It will be saved in the orb chest during crafting
-and put back after that.
+Restart this program if patterns has changed. Press Ctrl-C to stop.
+You can put your blood orb in the altar. It will be saved in the orb chest during crafting and put back after that.
 ]]
 
 local DEBUG = false
 
---[[
-    Scans input box, and returns the name of output and the slot input resides in
-
-    Returns nil,nil if no item is found.
-    Blood altar only takes one kind of items a time, so it is simpler.
-]]
-local function scanInputBox(transposerInput, side, inputToPatterns)
-    local stacksInfo = utils.collectStacksInfo(transposerInput, side)
+---Scans input box for the first item(s) available for crafting
+---@param transposerInput any
+---@param side integer
+---@param inputToPatterns PatternsLookup
+---@return string? outputName
+---@return ItemStacksInfo? inputInfo
+local function findFirstInput(transposerInput, side, inputToPatterns)
+    local stacksInfo = utils.combineStacks(transposerInput, side)
     for name, entry in pairs(stacksInfo) do
         local matchedOutputs = inputToPatterns[name]
         if matchedOutputs ~= nil then
@@ -44,36 +41,64 @@ local function scanInputBox(transposerInput, side, inputToPatterns)
             if DEBUG then
                 print(string.format("Found item %s in slot %d", name, slot))
             end
-            return matchedOutputs[1], slot
+            return matchedOutputs[1], entry
         end
     end
-    return nil, nil
 end
 
-local function getInput(transposerInput, fromSide, toSide, slot)
-    transposerInput.transferItem(fromSide, toSide, 1, slot, utils.firstAvailableSlot(transposerInput, toSide))
+---Transfers items from input container to the altar.
+---Tries to batch craft.
+---@param transposerInput any the transposer that reads the input container
+---@param fromSide integer the side input container is at
+---@param toSide integer the side the container connected to altar is at
+---@param inputInfo ItemStacksInfo
+---@param bloodRequired integer the amount of blood this recipe requires
+---@return integer numInput
+local function transferInput(transposerInput, fromSide, toSide, inputInfo, bloodRequired)
+    local slotInput = inputInfo.slots[1]
+    local numInput = math.min(inputInfo.sizes[1], BLOOD_ALTAR.getCurrentBlood() // bloodRequired)
+    transposerInput.transferItem(fromSide, toSide, numInput, slotInput,
+        utils.firstAvailableSlot(transposerInput, toSide))
+    return numInput
 end
 
+---Checks if blood altar has finished its crafting.
+---Checks if the output exists, but not its amount.
+---@param transposerAltar any
+---@param sideAltar integer
+---@param nameOutput string
+---@return boolean
 local function isAltarComplete(transposerAltar, sideAltar, nameOutput)
     local stack = transposerAltar.getStackInSlot(sideAltar, 1)
     if stack ~= nil then
         if stack.label == nameOutput then
-            print(nameOutput .. " done")
             return true
         end
     end
     return false
 end
 
-local function getOutput(transposerAltar, sideAltar, sideOutput)
-    transposerAltar.transferItem(sideAltar, sideOutput, 1, 1, utils.firstAvailableSlot(transposerAltar, sideOutput))
+---Transfers items from the altar to output container
+---@param transposerAltar any
+---@param sideAltar integer
+---@param sideOutput integer
+---@return integer numOutput
+local function transferOutput(transposerAltar, sideAltar, sideOutput)
+    local transferred = 0
+    local stackInfo = utils.firstStack(transposerAltar, sideAltar)
+    if stackInfo then
+        transferred = stackInfo.size
+        transposerAltar.transferItem(sideAltar, sideOutput, transferred, 1,
+            utils.firstAvailableSlot(transposerAltar, sideOutput))
+    end
+    return transferred
 end
 
 ---Finds the first blood orb in an inventory, returns its slot number and stack info if found
 ---@param transposer any
 ---@param sideInventory integer
----@return integer? slot
----@return StackInfo? orb
+---@return integer? slot where is orb is found
+---@return StackInfo? orb orb's stack info when it is found
 local function getOrbFromInventory(transposer, sideInventory)
     local stackInfo = utils.firstStack(transposer, sideInventory)
     if stackInfo and string.find(stackInfo.name, "^AWWayofTime:.*BloodOrb$") ~= nil then
@@ -81,11 +106,8 @@ local function getOrbFromInventory(transposer, sideInventory)
     end
 end
 
---[[
-    Retrieves any blood orb in the altar and put it in the orb chest
-
-    Does nothing if there is no orb in the altar
-]]
+---Retrieves any blood orb in the altar and put it in the orb chest.
+---Does nothing if there is no orb in the altar
 ---@param transposerAltar any
 ---@param sideAltar integer
 ---@param sideOrb integer
@@ -117,29 +139,17 @@ local function putOrbOnAltar(transposerInput, sideOrb, sideOutput, transposerAlt
     end
 end
 
----@param bloodAltar any
----@param requiredBlood integer
----@return boolean
-local function isBloodEnough(bloodAltar, requiredBlood)
-    return bloodAltar.getCurrentBlood() >= requiredBlood
-end
-
----@param bloodAltar any
----@param requiredTier integer
----@return boolean
-local function isTierEnough(bloodAltar, requiredTier)
-    return bloodAltar.getTier() >= requiredTier
-end
-
 ---Checks provided patterns info. Exits if anything is wrong.
 ---@param bloodAltar any
 ---@param patternsInfo table<string, PatternInfo>
 ---@param recipeRequirements table<string, BMRecipeRequirement>
+---@return boolean result false if something is wrong
+---@return string? errMsg about what is wrong
 local function checkPatterns(bloodAltar, patternsInfo, recipeRequirements)
     local msg = {}
     for output, _ in pairs(patternsInfo) do
         local requirement = recipeRequirements[string.lower(output)]
-        if not isTierEnough(bloodAltar, requirement.tier) then
+        if bloodAltar.getTier() < requirement.tier then
             msg[#msg + 1] = string.format(
                 "Pattern of %s needs tier (%d) higher than current one's.",
                 output, requirement.tier
@@ -147,8 +157,9 @@ local function checkPatterns(bloodAltar, patternsInfo, recipeRequirements)
         end
     end
     if #msg > 0 then
-        io.stderr:write(table.concat(msg, "\n"))
-        os.exit(false)
+        return false, table.concat(msg, "\n")
+    else
+        return true
     end
 end
 
@@ -156,28 +167,32 @@ local function main()
     print(HELLO_MSG)
     local patterns, inputToPatterns = utils.getPatternsInfo(ME_INTERFACE)
     print(string.format("Found %d patterns", utils.sizeOfTable(patterns)))
-    checkPatterns(BLOOD_ALTAR, patterns, RECIPE_REQUIREMENTS)
+    local result, errMsg = checkPatterns(BLOOD_ALTAR, patterns, RECIPE_REQUIREMENTS)
+    if not result then
+        io.stderr:write(errMsg)
+        os.exit(false)
+    end
 
-    local STATE = { IDLE = 0, INPUT = 1, WAIT = 2, WAIT_FOR_BLOOD = 3 }
+    local STATE = { IDLE = 0, INPUT = 1, WAIT_FOR_OUTPUT = 2, WAIT_FOR_BLOOD = 3 }
     local state = STATE.IDLE
     ---@type string?
     local outputName
+    ---@type ItemStacksInfo?
+    local inputInfo
     ---@type integer?
-    local inputSlot
-    local requirement
+    local requiredBlood
+    ---@type integer
+    local outputLeft = 0
     while true do
         if state == STATE.IDLE then
-            outputName, inputSlot = scanInputBox(TRANSPOSER_ME, TRANSPOSER_ME_SIDE_INPUT, inputToPatterns)
-            if outputName then
+            outputName, inputInfo = findFirstInput(TRANSPOSER_ME, TRANSPOSER_ME_SIDE_INPUT, inputToPatterns)
+            if outputName and inputInfo then
                 local lowerName = string.lower(outputName)
-                if lowerName == "universal fluid cell" then
-                    print("WARNING: Universal Fluid Cell is not supported yet.")
-                end
-                requirement = RECIPE_REQUIREMENTS[lowerName]
+                local requirement = RECIPE_REQUIREMENTS[lowerName]
+                requiredBlood = requirement and requirement.blood
                 if requirement then
-                    local requiredBlood = requirement.blood
-                    if not isBloodEnough(BLOOD_ALTAR, requiredBlood) then
-                        print(string.format("Not enough blood in Altar (%d needed). Waiting...", requiredBlood))
+                    if BLOOD_ALTAR.getCurrentBlood() < requiredBlood then
+                        print(string.format("Waiting for blood in Altar (%d needed).", requiredBlood))
                         state = STATE.WAIT_FOR_BLOOD
                         goto continue
                     end
@@ -196,16 +211,29 @@ local function main()
             end
         elseif state == STATE.INPUT then
             saveOrbFromAltar(TRANSPOSER_ALTAR, TRANSPOSER_ALTAR_SIDE_ALTAR, TRANSPOSER_ALTAR_SIDE_ORB)
-            getInput(TRANSPOSER_ME, TRANSPOSER_ME_SIDE_INPUT, TRANSPOSER_ME_SIDE_OUTPUT, inputSlot)
-            print("Waiting for output " .. outputName)
-            state = STATE.WAIT
-        elseif state == STATE.WAIT then
+            local numInput = transferInput(
+                TRANSPOSER_ME, TRANSPOSER_ME_SIDE_INPUT, TRANSPOSER_ME_SIDE_OUTPUT, inputInfo,
+                requiredBlood or BLOOD_ALTAR.getCapacity()
+            )
+            print(string.format("Put %d %s to craft %s (costing %s blood)",
+                numInput, inputInfo.label, outputName,
+                requiredBlood and tostring(requiredBlood) or "unknown"))
+            outputLeft = numInput
+            state = STATE.WAIT_FOR_OUTPUT
+        elseif state == STATE.WAIT_FOR_OUTPUT then
             if isAltarComplete(TRANSPOSER_ALTAR, TRANSPOSER_ALTAR_SIDE_ALTAR, outputName) then
-                getOutput(TRANSPOSER_ALTAR, TRANSPOSER_ALTAR_SIDE_ALTAR, TRANSPOSER_ALTAR_SIDE_OUTPUT)
-                state = STATE.IDLE
+                local transferred = transferOutput(TRANSPOSER_ALTAR, TRANSPOSER_ALTAR_SIDE_ALTAR,
+                    TRANSPOSER_ALTAR_SIDE_OUTPUT)
+                outputLeft = outputLeft - transferred
+                if outputLeft <= 0 then
+                    state = STATE.IDLE
+                end
+                if transferred > 0 then
+                    print(string.format("Got %d %s", transferred, outputName))
+                end
             end
         elseif state == STATE.WAIT_FOR_BLOOD then
-            if isBloodEnough(BLOOD_ALTAR, requirement.blood) then
+            if BLOOD_ALTAR.getCurrentBlood() >= requiredBlood then
                 state = STATE.INPUT
             end
         end
@@ -218,21 +246,25 @@ local function main()
     end
 end
 
-local function testScanInputBox()
+local function testFindFirstInput()
     local _, inputToPatterns = utils.getPatternsInfo(ME_INTERFACE)
-    print(scanInputBox(TRANSPOSER_ME, sides.south, inputToPatterns))
+    print(findFirstInput(TRANSPOSER_ME, sides.south, inputToPatterns))
 end
 
-local function testGetInput()
-    getInput(TRANSPOSER_ME, TRANSPOSER_ME_SIDE_INPUT, TRANSPOSER_ME_SIDE_OUTPUT, 1)
+local function testTransferInput()
+    transferInput(TRANSPOSER_ME, TRANSPOSER_ME_SIDE_INPUT, TRANSPOSER_ME_SIDE_OUTPUT, 1, 100000)
 end
 
 local function testIsAltarComplete()
     print(isAltarComplete(TRANSPOSER_ALTAR, sides.east, "Master Blood Orb"))
 end
 
-local function testGetOutput()
-    getOutput(TRANSPOSER_ALTAR, sides.east, sides.south)
+local function testAltarItems()
+    print(utils.tableToString(utils.collectStacksInfo(TRANSPOSER_ALTAR, TRANSPOSER_ALTAR_SIDE_ALTAR)))
+end
+
+local function testTransferOutput()
+    transferOutput(TRANSPOSER_ALTAR, sides.east, sides.south)
 end
 
 local function testSaveOrb()
@@ -251,8 +283,16 @@ local function testSavePutOrb()
         TRANSPOSER_ALTAR_SIDE_ALTAR)
 end
 
-local function testIsBloodEnough()
-    print(isBloodEnough(BLOOD_ALTAR, 100000))
+local function testAltarTier()
+    print(string.format("Tier: %d", BLOOD_ALTAR.getTier()))
+end
+
+local function testAltarBlood()
+    print(string.format("Blood: %d", BLOOD_ALTAR.getCurrentBlood()))
+end
+
+local function testAltarCapacity()
+    print(string.format("Capacity: %d", BLOOD_ALTAR.getCapacity()))
 end
 
 main()
