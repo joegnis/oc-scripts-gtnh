@@ -1,0 +1,6 @@
+[**.lua]
+indent_style = space
+indent_size = 4
+
+[spec/**Spec.lua]
+indent_size = 2

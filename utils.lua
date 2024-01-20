@@ -41,6 +41,42 @@ function M.shallowCopy(orig)
 end
 
 --[[
+    Creates a child class table inherited from baseClass.
+]]
+function M.inheritsFrom(baseClass)
+    if not baseClass then
+        error("baseClass should not be nil", 2)
+    end
+    local childClass = {}
+    baseClass.__index = baseClass
+    childClass = setmetatable(childClass, baseClass)
+    return childClass
+end
+
+--[[
+    Tests if a value is an instance of a class.
+
+    Checks inheritance. Inheritance should be made by the inheritsFrom
+    method above.
+]]
+---@param value any
+---@param klass any
+---@return boolean
+function M.isInstance(value, klass)
+    if type(value) == "table" then
+        local curClass = getmetatable(value)
+        while curClass do
+            if curClass == klass then
+                return true
+            else
+                curClass = getmetatable(curClass)
+            end
+        end
+    end
+    return false
+end
+
+--[[
     Returns the first available slot in the inventory
 
     Returns 0 if it is full

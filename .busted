@@ -1,0 +1,9 @@
+return {
+    _all = {
+        pattern = "Spec",
+    },
+    default = {
+        verbose = true,
+        ROOT = {"spec"},
+    },
+}
