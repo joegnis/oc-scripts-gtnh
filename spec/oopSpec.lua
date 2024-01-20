@@ -4,8 +4,7 @@ local inheritsFrom = utils.inheritsFrom
 local isInstance = utils.isInstance
 
 
--- An empty table used in super() for example
-local NOT_PROVIDED = {}
+local NOT_PROVIDED = utils.NOT_PROVIDED
 
 ---@class Base1
 ---@field v1 integer
