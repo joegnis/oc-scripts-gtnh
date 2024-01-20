@@ -9,6 +9,9 @@ local NOT_PROVIDED = utils.NOT_PROVIDED
 ---@class Base1
 ---@field v1 integer
 local Base1 = {}
+-- Defines getters for current class and super class
+-- They do not change between individual instances of the same class
+-- so are defined as class methods
 Base1.class = function() return Base1 end
 Base1.super = function () return NOT_PROVIDED end
 
