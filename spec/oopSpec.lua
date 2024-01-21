@@ -27,16 +27,21 @@ function Base1:new(v1)
 end
 
 ---@class Class1: Base1
+---@field vc1 integer
 local Class1 = inheritsFrom(Base1)
 Class1.class = function() return Class1 end
 Class1.super = function() return Base1 end
 
 ---@param v1 integer?
-function Class1:new(v1)
+---@param vc1 integer?
+---@return Class1
+function Class1:new(v1, vc1)
   local o = {}
   -- Have to use parent class directly instead of self.super()
   -- Pass in self as the first parameter to properly set metatable
-  o = Base1.new(self, v1)
+  -- Use @as to force type since luals is confused
+  o = Base1.new(self, v1)  --[[@as Class1]]
+  o.vc1 = vc1 or 1
   return o
 end
 
@@ -45,9 +50,10 @@ local Class2 = inheritsFrom(Class1)
 Class2.class = function() return Class2 end
 Class2.super = function() return Class1 end
 
+---@return Class2
 function Class2:new(v1)
   local o = {}
-  o = Class1.new(self, v1)
+  o = Class1.new(self, v1)  --[[@as Class2]]
   return o
 end
 
