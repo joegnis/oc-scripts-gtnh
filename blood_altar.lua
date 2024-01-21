@@ -334,6 +334,9 @@ function IdleState:checkSystem()
         nextState:enterWithAltarRequirement(requirement)
         return nextState
     else
+        -- Adds a delay before putting orb back to try to mitigate this issue:
+        -- https://github.com/GTNewHorizons/GT-New-Horizons-Modpack/issues/14401
+        os.sleep(2)
         putOrbOnAltar(
             TRANSPOSER_ME, TRANSPOSER_ME_SIDE_ORB, TRANSPOSER_ME_SIDE_OUTPUT,
             TRANSPOSER_ALTAR, TRANSPOSER_ALTAR_SIDE_ALTAR
