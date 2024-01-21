@@ -163,82 +163,245 @@ local function checkPatterns(bloodAltar, patternsInfo, recipeRequirements)
     end
 end
 
+-- =================================
+-- == Base class for Altar states ==
+-- =================================
+---@class AltarState
+local AltarState = {}
+
+function AltarState:new()
+    local o = {}
+    self.__index = self
+    o = setmetatable(o, self)
+    return o
+end
+
+---@return AltarState?
+function AltarState:checkSystem() end
+
+---@param inputInfo ItemStacksInfo
+function AltarState:enterWithInputInfo(inputInfo) end
+
+---@param name string
+---@param amount integer
+function AltarState:enterWithOutputInfo(name, amount) end
+
+---@param altarRequirement {blood: integer, tier: integer}
+function AltarState:enterWithAltarRequirement(altarRequirement) end
+
+-- ================
+-- == Idle State ==
+-- ================
+---@class IdleState: AltarState
+---@field inputToPatterns table<string, string[]>
+local IdleState = utils.inheritsFrom(AltarState)
+
+---@param inputToPatterns table<string, string[]>
+---@return IdleState
+function IdleState:new(inputToPatterns)
+    -- Saves patterns into the instance so that
+    -- we won't need to scan patterns each time in the main loop.
+    -- May choose not to save it to eliminate the needs to
+    -- restart to scan for patterns.
+    local o = {}
+    o = AltarState.new(self) --[[@as IdleState]]
+    o.inputToPatterns = inputToPatterns
+    return o
+end
+
+-- =================
+-- == Input State ==
+-- =================
+---@class InputState: AltarState
+---@field inputInfo ItemStacksInfo
+---@field outputName string
+---@field altarRequirement { blood: integer, tier: integer }
+local InputState = utils.inheritsFrom(AltarState)
+
+---@return InputState
+function InputState:new()
+    local o = {}
+    o = AltarState.new(self) --[[@as InputState]]
+    return o
+end
+
+---@param inputInfo ItemStacksInfo
+function InputState:enterWithInputInfo(inputInfo)
+    self.inputInfo = inputInfo
+end
+
+---@param name string
+function InputState:enterWithOutputInfo(name, _)
+    self.outputName = name
+end
+
+---@param altarRequirement {blood: integer, tier: integer}
+function InputState:enterWithAltarRequirement(altarRequirement)
+    self.altarRequirement = altarRequirement
+end
+
+-- ===========================
+-- == Wait for Output State ==
+-- ===========================
+---@class WaitForOutputState: AltarState
+---@field outputLeft integer
+---@field outputName string
+local WaitForOutputState = utils.inheritsFrom(AltarState)
+
+---@return WaitForOutputState
+function WaitForOutputState:new()
+    local o = {}
+    o = AltarState.new(self) --[[@as WaitForOutputState]]
+    return o
+end
+
+---@param name string
+---@param amount integer
+function WaitForOutputState:enterWithOutputInfo(name, amount)
+    self.outputLeft = amount
+    self.outputName = name
+end
+
+-- ==========================
+-- == Wait for Blood State ==
+-- ==========================
+---@class WaitForBloodState: AltarState
+---@field inputInfo ItemStacksInfo
+---@field outputName string
+---@field altarRequirement { blood: integer, tier: integer }
+local WaitForBloodState = utils.inheritsFrom(AltarState)
+
+---@return WaitForBloodState
+function WaitForBloodState:new()
+    local o = {}
+    o = AltarState.new(self) --[[@as WaitForBloodState]]
+    return o
+end
+
+---@param inputInfo ItemStacksInfo
+function WaitForBloodState:enterWithInputInfo(inputInfo)
+    self.inputInfo = inputInfo
+end
+
+---@param name string
+function WaitForBloodState:enterWithOutputInfo(name, _)
+    self.outputName = name
+end
+
+---@param altarRequirement {blood: integer, tier: integer}
+function WaitForBloodState:enterWithAltarRequirement(altarRequirement)
+    self.altarRequirement = altarRequirement
+end
+
+-- ==========================
+-- == State Initialization ==
+-- ==========================
+local MEPatterns, inputToPatterns = utils.getPatternsInfo(ME_INTERFACE)
+local STATE_IDLE = IdleState:new(inputToPatterns)
+local STATE_INPUT = InputState:new()
+local STATE_WAIT_FOR_OUTPUT = WaitForOutputState:new()
+local STATE_WAIT_FOR_BLOOD = WaitForBloodState:new()
+
+-- =================================
+-- == State Transition Functions ==
+-- =================================
+---@return AltarState?
+function IdleState:checkSystem()
+    local outputName, inputInfo = findFirstInput(
+        TRANSPOSER_ME, TRANSPOSER_ME_SIDE_INPUT, self.inputToPatterns)
+    if outputName and inputInfo then
+        local lowerName = string.lower(outputName)
+        local requirement = RECIPE_REQUIREMENTS[lowerName]
+        local requiredBlood = requirement and requirement.blood
+        if requirement then
+            if BLOOD_ALTAR.getCurrentBlood() < requiredBlood then
+                print(string.format("Waiting for blood in Altar (%d needed).", requiredBlood))
+                local nextState = STATE_WAIT_FOR_BLOOD
+                nextState:enterWithInputInfo(inputInfo)
+                nextState:enterWithOutputInfo(outputName)
+                nextState:enterWithAltarRequirement(requirement)
+                return nextState
+            end
+        else
+            print(string.format(
+                "Blood requirement for %s was not found. Putting it onto Altar regardlessly.",
+                outputName
+            ))
+        end
+        local nextState = STATE_INPUT
+        nextState:enterWithInputInfo(inputInfo)
+        nextState:enterWithOutputInfo(outputName)
+        nextState:enterWithAltarRequirement(requirement)
+        return nextState
+    else
+        putOrbOnAltar(
+            TRANSPOSER_ME, TRANSPOSER_ME_SIDE_ORB, TRANSPOSER_ME_SIDE_OUTPUT,
+            TRANSPOSER_ALTAR, TRANSPOSER_ALTAR_SIDE_ALTAR
+        )
+    end
+end
+
+---@return AltarState?
+function InputState:checkSystem()
+    saveOrbFromAltar(TRANSPOSER_ALTAR, TRANSPOSER_ALTAR_SIDE_ALTAR, TRANSPOSER_ALTAR_SIDE_ORB)
+    local requiredBlood = self.altarRequirement.blood
+    local numInput = transferInput(
+        TRANSPOSER_ME, TRANSPOSER_ME_SIDE_INPUT, TRANSPOSER_ME_SIDE_OUTPUT,
+        self.inputInfo,
+        requiredBlood or BLOOD_ALTAR.getCapacity()
+    )
+    print(string.format("Put %d %s to craft %s (costing %s blood)",
+        numInput, self.inputInfo.label, self.outputName,
+        requiredBlood and tostring(requiredBlood) or "unknown"))
+    local nextState = STATE_WAIT_FOR_OUTPUT
+    nextState:enterWithOutputInfo(self.outputName, numInput)
+    return nextState
+end
+
+---@return AltarState?
+function WaitForOutputState:checkSystem()
+    if isAltarComplete(TRANSPOSER_ALTAR, TRANSPOSER_ALTAR_SIDE_ALTAR, self.outputName) then
+        local transferred = transferOutput(TRANSPOSER_ALTAR, TRANSPOSER_ALTAR_SIDE_ALTAR,
+            TRANSPOSER_ALTAR_SIDE_OUTPUT)
+        self.outputLeft = self.outputLeft - transferred
+        if transferred > 0 then
+            print(string.format("Got %d %s", transferred, self.outputName))
+        end
+        if self.outputLeft <= 0 then
+            return STATE_IDLE
+        end
+    end
+end
+
+---@return AltarState?
+function WaitForBloodState:checkSystem()
+    if BLOOD_ALTAR.getCurrentBlood() >= self.altarRequirement.blood then
+        local nextState = STATE_INPUT
+        nextState:enterWithInputInfo(self.inputInfo)
+        nextState:enterWithOutputInfo(self.outputName)
+        nextState:enterWithAltarRequirement(self.altarRequirement)
+        return nextState
+    end
+end
+
 local function main()
     print(HELLO_MSG)
-    local patterns, inputToPatterns = utils.getPatternsInfo(ME_INTERFACE)
-    print(string.format("Found %d patterns", utils.sizeOfTable(patterns)))
-    local result, errMsg = checkPatterns(BLOOD_ALTAR, patterns, RECIPE_REQUIREMENTS)
+    print(string.format("Found %d patterns", utils.sizeOfTable(MEPatterns)))
+    local result, errMsg = checkPatterns(BLOOD_ALTAR, MEPatterns, RECIPE_REQUIREMENTS)
     if not result then
         io.stderr:write(errMsg)
         os.exit(false)
     end
 
-    local STATE = { IDLE = 0, INPUT = 1, WAIT_FOR_OUTPUT = 2, WAIT_FOR_BLOOD = 3 }
-    local state = STATE.IDLE
-    ---@type string?
-    local outputName
-    ---@type ItemStacksInfo?
-    local inputInfo
-    ---@type integer?
-    local requiredBlood
-    ---@type integer
-    local outputLeft = 0
+
+    ---@type AltarState
+    local state = STATE_IDLE
     while true do
-        if state == STATE.IDLE then
-            outputName, inputInfo = findFirstInput(TRANSPOSER_ME, TRANSPOSER_ME_SIDE_INPUT, inputToPatterns)
-            if outputName and inputInfo then
-                local lowerName = string.lower(outputName)
-                local requirement = RECIPE_REQUIREMENTS[lowerName]
-                requiredBlood = requirement and requirement.blood
-                if requirement then
-                    if BLOOD_ALTAR.getCurrentBlood() < requiredBlood then
-                        print(string.format("Waiting for blood in Altar (%d needed).", requiredBlood))
-                        state = STATE.WAIT_FOR_BLOOD
-                        goto continue
-                    end
-                else
-                    print(string.format(
-                        "Blood requirement for %s was not found. Putting it onto Altar regardlessly.",
-                        outputName
-                    ))
-                end
-                state = STATE.INPUT
-            else
-                putOrbOnAltar(
-                    TRANSPOSER_ME, TRANSPOSER_ME_SIDE_ORB, TRANSPOSER_ME_SIDE_OUTPUT,
-                    TRANSPOSER_ALTAR, TRANSPOSER_ALTAR_SIDE_ALTAR
-                )
-            end
-        elseif state == STATE.INPUT then
-            saveOrbFromAltar(TRANSPOSER_ALTAR, TRANSPOSER_ALTAR_SIDE_ALTAR, TRANSPOSER_ALTAR_SIDE_ORB)
-            local numInput = transferInput(
-                TRANSPOSER_ME, TRANSPOSER_ME_SIDE_INPUT, TRANSPOSER_ME_SIDE_OUTPUT, inputInfo,
-                requiredBlood or BLOOD_ALTAR.getCapacity()
-            )
-            print(string.format("Put %d %s to craft %s (costing %s blood)",
-                numInput, inputInfo.label, outputName,
-                requiredBlood and tostring(requiredBlood) or "unknown"))
-            outputLeft = numInput
-            state = STATE.WAIT_FOR_OUTPUT
-        elseif state == STATE.WAIT_FOR_OUTPUT then
-            if isAltarComplete(TRANSPOSER_ALTAR, TRANSPOSER_ALTAR_SIDE_ALTAR, outputName) then
-                local transferred = transferOutput(TRANSPOSER_ALTAR, TRANSPOSER_ALTAR_SIDE_ALTAR,
-                    TRANSPOSER_ALTAR_SIDE_OUTPUT)
-                outputLeft = outputLeft - transferred
-                if outputLeft <= 0 then
-                    state = STATE.IDLE
-                end
-                if transferred > 0 then
-                    print(string.format("Got %d %s", transferred, outputName))
-                end
-            end
-        elseif state == STATE.WAIT_FOR_BLOOD then
-            if BLOOD_ALTAR.getCurrentBlood() >= requiredBlood then
-                state = STATE.INPUT
-            end
+        local next = state:checkSystem()
+        if next then
+            state = next
         end
 
-        ::continue::
         local id = event.pull(0.5, "interrupted")
         if id ~= nil then
             break
