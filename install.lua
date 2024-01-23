@@ -8,6 +8,10 @@ local SCRIPTS = {
     "bm_alchemist.lua",
     "regulate_size.lua",
     "utils.lua",
+    "snippets/get_item_info.lua",
+}
+local DIRS = {
+    "snippets"
 }
 local CONFIGS = {
     "blood_altar_config.lua",
@@ -107,6 +111,10 @@ local function main(args)
         end
         downloadFile(fileArg, REPO, branch)
     elseif option == nil then
+        for _, dir in ipairs(DIRS) do
+            shell.execute(string.format("mkdir %s", dir))
+        end
+
         for _, script in ipairs(SCRIPTS) do
             downloadFile(script, REPO, branch)
         end
