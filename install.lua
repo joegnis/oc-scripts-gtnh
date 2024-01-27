@@ -10,6 +10,7 @@ local SCRIPTS = {
     "utils.lua",
     "snippets/get_item_info.lua",
     "snippets/list_components.lua",
+    "snippets/show_component_api.lua",
 }
 local DIRS = {
     "snippets"
