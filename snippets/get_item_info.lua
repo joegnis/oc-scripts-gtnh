@@ -1,7 +1,12 @@
--- Prints info about the first item in the chest
--- on top of the transposer in the system.
 local component = require "component"
 local sides = require "sides"
+
+
+local args = { ... }
+if args[1] == "-h" or args[1] == "--help" then
+    print("Prints info about the first item in the chest on top of the (primary) transposer.")
+    os.exit(0)
+end
 
 -- Change this if needed
 local transposer = component.transposer
