@@ -9,6 +9,7 @@ local SCRIPTS = {
     "regulate_size.lua",
     "utils.lua",
     "snippets/get_item_info.lua",
+    "snippets/list_components.lua",
 }
 local DIRS = {
     "snippets"
