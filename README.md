@@ -2,8 +2,12 @@
 
 ## Install
 
-    wget https://raw.githubusercontent.com/joegnis/oc-scripts-gtnh/master/install.lua
-    ./install.lua
+```shell
+mkdir new_dir
+cd new_dir
+wget https://raw.githubusercontent.com/joegnis/oc-scripts-gtnh/master/install.lua
+./install.lua
+```
 
 ```
 Usage:
