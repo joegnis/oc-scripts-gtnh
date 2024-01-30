@@ -35,7 +35,7 @@ elseif args[1] == "--id" then
     end
 elseif args[1] == "--name" then
     if args[2] then
-        print_api(component(args[2]))
+        print_api(component[args[2]])
     else
         print("Specify a component name.")
         os.exit(1)
