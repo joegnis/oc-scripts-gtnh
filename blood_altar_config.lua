@@ -19,6 +19,7 @@ local config = {
     transposerAltarAltarSide = sides.west,
     transposerAltarOutputSide = sides.north,
     transposerAltarOrbSide = sides.top,
+    debug = false,
     -- Hard-coded blood and tier requirement for each recipe
     -- Simply right click Altar of Blood in NEI to see all its recipe
     -- in game.

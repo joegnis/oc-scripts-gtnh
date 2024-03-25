@@ -23,8 +23,6 @@ Restart this program if patterns has changed. Press Ctrl-C to stop.
 You can put your blood orb in the altar. It will be saved in the orb chest during crafting and put back after that.
 ]]
 
-local DEBUG = false
-
 ---Scans input box for the first item(s) available for crafting
 ---@param transposerInput any
 ---@param side integer
@@ -56,9 +54,17 @@ end
 ---@return integer numInput
 local function transferInput(transposerInput, fromSide, toSide, inputInfo, bloodRequired)
     local slotInput = inputInfo.slots[1]
-    local numInput = math.min(inputInfo.sizes[1], BLOOD_ALTAR.getCurrentBlood() // bloodRequired)
+    local currentBlood = BLOOD_ALTAR.getCurrentBlood()
+    local inputAvail = inputInfo.sizes[1]
+    local numInput = math.min(inputAvail, currentBlood // bloodRequired)
     transposerInput.transferItem(fromSide, toSide, numInput, slotInput,
         utils.firstAvailableSlot(transposerInput, toSide))
+    if config.debug then
+        print(string.format(
+            "DEBUG: Transferred %d items. Has %d. Altar blood: %d. Required blood: %d",
+            numInput, inputAvail, currentBlood, bloodRequired
+        ))
+    end
     return numInput
 end
 
@@ -353,6 +359,14 @@ function InputState:checkSystem()
         self.inputInfo,
         requiredBlood or BLOOD_ALTAR.getCapacity()
     )
+    if numInput == 0 then
+        if config.debug then
+            print(string.format(
+                "DEBUG: Number of items transferred is 0. Back to IDLE state."
+            ))
+        end
+        return STATE_IDLE
+    end
     print(string.format("Put %d %s to craft %s (costing %s blood)",
         numInput, self.inputInfo.label, self.outputName,
         requiredBlood and tostring(requiredBlood) or "unknown"))
@@ -396,19 +410,20 @@ local function main()
         os.exit(false)
     end
 
+    local interrupted = false
+    event.listen("interrupted", function ()
+        interrupted = true
+    end)
 
     ---@type AltarState
     local state = STATE_IDLE
-    while true do
+    while not interrupted do
         local next = state:checkSystem()
         if next then
             state = next
         end
 
-        local id = event.pull(0.5, "interrupted")
-        if id ~= nil then
-            break
-        end
+        os.sleep(0.5)
     end
 end
 
