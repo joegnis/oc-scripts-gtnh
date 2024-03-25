@@ -79,6 +79,11 @@ function M.isInstance(value, klass)
     return false
 end
 
+function M.printErr(message)
+    io.stderr:write(message)
+    io.stderr:write("\n")
+end
+
 --[[
     Returns the first available slot in the inventory
 
@@ -96,6 +101,24 @@ function M.firstAvailableSlot(transposer, sideInventory)
         curSlot = curSlot + 1
     end
     return 0
+end
+
+---@alias FluidInfo { label: string, amount: integer, slot: integer }
+---Returns the first fluid in the tank
+---@param transposer any
+---@param sideTank integer
+---@return FluidInfo?
+function M.firstFluid(transposer, sideTank)
+    local res = transposer.getFluidInTank(sideTank)
+    for _, slotInfo in ipairs(res) do
+        if slotInfo.amount > 0 then
+            return {
+                label = slotInfo.label,
+                amount = slotInfo.amount,
+                slot = 1
+            }
+        end
+    end
 end
 
 ---@alias StackInfo { label: string, name: string, slot: integer, size: integer, maxSize: integer }
@@ -135,6 +158,18 @@ function M.firstStack(transposer, sideInventory)
     end
 end
 
+---@param transposer any
+---@param side integer
+function M.isChestEmpty(transposer, side)
+    return M.firstStack(transposer, side) == nil
+end
+
+---@param transposer any
+---@param side integer
+function M.isTankEmpty(transposer, side)
+    return M.firstFluid(transposer, side) == nil
+end
+
 ---@alias ItemStacksInfo { name: string, label: string, slots: integer[], sizes: integer[], maxSize: integer}
 
 --[[
@@ -154,8 +189,12 @@ end
 ]]
 ---@param transposer any
 ---@param side integer
+---@param filter (fun(name: string, label: string, size: integer, maxSize: integer): boolean)?
 ---@return table<string, ItemStacksInfo>
-function M.collectStacksInfo(transposer, side)
+function M.collectStacksInfo(transposer, side, filter)
+    if not filter then
+        filter = function() return true end
+    end
     local stackIterator = transposer.getAllStacks(side)
     local stacksInfo = {}
     local slot = 1
@@ -171,14 +210,18 @@ function M.collectStacksInfo(transposer, side)
             local itemName = curStack.name
             ---@type integer
             local stackSize = curStack.size
+            ---@type integer
+            local maxStackSize = curStack.maxSize
 
-            local entry = stacksInfo[itemLabel]
-            if entry == nil then
-                entry = { name = itemName, label = itemLabel, slots = {}, sizes = {}, maxSize = curStack.maxSize }
-                stacksInfo[itemLabel] = entry
+            if filter(itemName, itemLabel, stackSize, maxStackSize) then
+                local entry = stacksInfo[itemLabel]
+                if entry == nil then
+                    entry = { name = itemName, label = itemLabel, slots = {}, sizes = {}, maxSize = maxStackSize }
+                    stacksInfo[itemLabel] = entry
+                end
+                table.insert(entry.slots, slot)
+                table.insert(entry.sizes, stackSize)
             end
-            table.insert(entry.slots, slot)
-            table.insert(entry.sizes, stackSize)
         end
 
         slot = slot + 1
@@ -315,6 +358,18 @@ local function testFirstAvailableSlot()
     print("First available slot is " .. slot)
 end
 
+local function testIsChestEmpty()
+    local component = require "component"
+    local sides = require "sides"
+    print(M.isChestEmpty(component.composer, sides.top))
+end
+
+local function testIsTankEmpty()
+    local component = require "component"
+    local sides = require "sides"
+    print(M.isTankEmpty(component.composer, sides.south))
+end
+
 local function testGetPatternsInfo()
     local component = require "component"
     local patterns, inputToPatterns = M.getPatternsInfo(component.me_interface)
@@ -322,6 +377,16 @@ local function testGetPatternsInfo()
     print(M.tableToString(patterns))
     print("Input to Patterns:")
     print(M.tableToString(inputToPatterns))
+end
+
+local function testCollectStacksFilter()
+    local component = require "component"
+    local sides = require "sides"
+    print(M.tableToString(M.collectStacksInfo(
+        component.transposer, sides.top, function (_, label)
+            return label == "Cobblestone" or label == "ZPM Machine Casing"
+        end)
+    ))
 end
 
 local function testCombineStacks()
@@ -332,6 +397,14 @@ local function testCombineStacks()
     print(M.tableToString(
         M.combineStacks(transposer, side, true)
     ))
+end
+
+local function testFirstFluid()
+    local component = require "component"
+    local sides = require "sides"
+    local transposer = component.transposer
+    local side = sides.west
+    print(M.firstFluid(transposer, side))
 end
 
 return M
