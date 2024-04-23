@@ -6,6 +6,7 @@ local DEFAULT_BRANCH = "master"
 local SCRIPTS = {
     "blood_altar.lua",
     "bm_alchemist.lua",
+    "config_switcher_fluid.lua",
     "regulate_size.lua",
     "utils.lua",
     "snippets/get_item_info.lua",
@@ -19,6 +20,7 @@ local DIRS = {
 local CONFIGS = {
     "blood_altar_config.lua",
     "bm_alchemist_config.lua",
+    "config_switcher_fluid_config.lua",
     "regulate_size_config.lua",
 }
 

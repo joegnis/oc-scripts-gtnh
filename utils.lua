@@ -158,6 +158,24 @@ function M.firstStack(transposer, sideInventory)
     end
 end
 
+---Gets raw data of the first stack returned by getAllStacks() API
+---@param transposer any
+---@param sideInventory integer
+---@return table?
+function M.firstStackRaw(transposer, sideInventory)
+    local stackIterator = transposer.getAllStacks(sideInventory)
+    local curStack = stackIterator()
+    local curSlot = 1
+    while curStack ~= nil do
+        if next(curStack) ~= nil then
+            return curStack
+        end
+
+        curStack = stackIterator()
+        curSlot = curSlot + 1
+    end
+end
+
 ---@param transposer any
 ---@param side integer
 function M.isChestEmpty(transposer, side)
