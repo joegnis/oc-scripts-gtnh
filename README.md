@@ -130,7 +130,7 @@ ingredients in storage cell are gone before crafting is done,
 which confuses EnderIO conduit to extract storage cell too early.
 Storage cell has to wait in ME chest until crafting is done since it contains the config item required for crafting.
 
-Script tried its best to determine whether crafting is complete, and
+Script tries its best (not guaranteed) to determine whether crafting is complete, and
 after that it transfers the storage cell out.
 Crafting is deemed complete when it sees
 1. there is no item (fluids are in packets which are items) in machine's AE subnet, and
