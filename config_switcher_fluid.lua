@@ -1,11 +1,11 @@
 local event = require "event"
 
-package.loaded["circuit_switcher_fluid_config"] = nil
-local config = require "circuit_switcher_fluid_config"
+package.loaded["config_switcher_fluid_config"] = nil
+local config = require "config_switcher_fluid_config"
 local utils = require "utils"
 
 local function isItemIgnored(itemTable)
-    for _, crit in pairs(config.additionalItemsToIgnore) do
+    for _, crit in pairs(config.itemsToIgnore) do
         if string.find(itemTable[crit.field], crit.pattern) then
             return true
         end

@@ -14,7 +14,7 @@ local config = {
     ---Items are found if their pattern is found in any substring.
     ---Molds and Shapes share the same "name",
     ---so we have to find by different fields
-    ---@type {key: string, pattern: string}[]
+    ---@type {field: string, pattern: string}[]
     itemsToIgnore = {
         -- programmed circuit
         { field = "name",  pattern = "gt.integrated_circuit" },
